@@ -1,8 +1,17 @@
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import generics
+from django.db import models
 
-from .models import Movie
-from .serializers import MovieListSerializer, MovieDetailSerializer, ReviewCreateSerializer, CreateRatingSerializer
+from .models import Movie, Actor
+from .serializers import (
+    MovieListSerializer,
+    MovieDetailSerializer,
+    ReviewCreateSerializer,
+    CreateRatingSerializer,
+    ActorListSerializer,
+    ActorDetailSerializer
+)
 from .service import get_client_ip
 
 
@@ -10,7 +19,16 @@ class MovieListView(APIView):
     """Вывод списка фильмов"""
 
     def get(self, request):
-        movies = Movie.objects.filter(draft=False)
+        movies = Movie.objects.filter(draft=False).annotate(
+            rating_user=models.Count('ratings', filter=models.Q(ratings__ip=get_client_ip(request)))
+            # rating_user=models.Case(
+            #     models.When(ratings__ip=get_client_ip(request), then=True),
+            #     default=False,
+            #     output_field=models.BooleanField()
+            # )
+        ).annotate(
+            middle_star=models.Sum(models.F('ratings__star')) / models.Count(models.F('ratings'))
+        )
         serializer = MovieListSerializer(movies, many=True)
         return Response(serializer.data)
 
@@ -29,7 +47,7 @@ class ReviewCreateView(APIView):
 
     def post(self, request):
         review = ReviewCreateSerializer(data=request.data)
-        if review.is_valid():
+        if review.is_valid(raise_exception=True):
             review.save()
         return Response(status=201)
 
@@ -44,3 +62,15 @@ class AddStarRatingView(APIView):
             return Response(status=201)
         else:
             return Response(status=400)
+
+
+class ActorsListView(generics.ListAPIView):
+    """Вывод списка актеров"""
+    queryset = Actor.objects.all()
+    serializer_class = ActorListSerializer
+
+
+class ActorsDetailView(generics.RetrieveAPIView):
+    """Вывод актера или режиссера"""
+    queryset = Actor.objects.all()
+    serializer_class = ActorDetailSerializer

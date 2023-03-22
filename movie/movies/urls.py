@@ -7,4 +7,6 @@ urlpatterns = [
     path('movie/<int:pk>/', views.MovieDetailView.as_view()),
     path('review/', views.ReviewCreateView.as_view()),
     path('rating/', views.AddStarRatingView.as_view()),
+    path('actor/', views.ActorsListView.as_view()),
+    path('actor/<int:pk>/', views.ActorsDetailView.as_view()),
 ]
