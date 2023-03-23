@@ -3,3 +3,4 @@ Pillow==9.4.0
 djangorestframework==3.14.0
 psycopg2-binary==2.9.5
 django-ckeditor==6.5.1
+django-filter==22.1
